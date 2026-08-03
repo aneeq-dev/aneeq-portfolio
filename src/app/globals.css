@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #ff014f;
+  --canvas: #0f0f0f;
+  --surface: #212121;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+body {
+  background: var(--canvas);
+  color: #fff;
+  overflow-x: hidden;
+  max-width: 100%;
+  position: relative;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  .section-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.22em] text-primary;
+  }
+
+  .section-title {
+    @apply mt-3 text-3xl font-bold tracking-tight text-white md:text-4xl lg:text-5xl;
+  }
+
+  .section-subtitle {
+    @apply mt-3 max-w-2xl text-base leading-relaxed text-ink-muted md:text-lg;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition duration-300 hover:bg-[#e00045] hover:shadow-glow;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-md border border-primary px-6 py-3 text-sm font-semibold text-primary transition duration-300 hover:bg-primary hover:text-white;
+  }
+
+  .surface-card {
+    @apply rounded-xl border border-white/5 bg-surface p-6 shadow-card transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f0f0f;
+}
+::-webkit-scrollbar-thumb {
+  background: #ff014f;
+  border-radius: 999px;
+}
