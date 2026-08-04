@@ -150,8 +150,11 @@ export function Projects() {
           </div>
         )}
 
-        <div className="mt-12 text-center">
-          <a href="#contact" className="btn-outline">
+        <div className="mt-12 flex justify-center">
+          <a
+            href="#contact"
+            className="btn-outline w-full justify-center sm:w-auto"
+          >
             Discuss a Project
           </a>
         </div>

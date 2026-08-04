@@ -24,12 +24,14 @@ const rotatingTitles = [
 function HeroTip({
   label,
   children,
+  className = "",
 }: {
   label: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <span className="group/tip relative inline-flex">
+    <span className={`group/tip relative inline-flex ${className}`.trim()}>
       {children}
       <span
         role="tooltip"
@@ -88,7 +90,7 @@ function ResumeDropdown() {
     if (!button || !menu) return;
 
     const btn = button.getBoundingClientRect();
-    const menuW = menu.offsetWidth || 352;
+    const menuW = menu.offsetWidth || 448;
     const menuH = menu.offsetHeight || 280;
     const gap = 12;
     const pad = 12;
@@ -201,14 +203,14 @@ function ResumeDropdown() {
   return (
     <div
       ref={rootRef}
-      className="relative inline-flex"
+      className="relative flex w-full sm:inline-flex sm:w-auto"
       onMouseEnter={openMenu}
       onMouseLeave={scheduleClose}
     >
       <button
         ref={buttonRef}
         type="button"
-        className="btn-primary gap-2"
+        className="btn-primary w-full justify-center gap-2 sm:w-auto"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
@@ -244,7 +246,7 @@ function ResumeDropdown() {
             ...menuStyle,
             visibility: ready ? "visible" : "hidden",
           }}
-          className="absolute z-30 w-[min(100%,22rem)] overflow-hidden rounded-xl border border-primary/25 bg-[#161616]/95 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+          className="absolute z-30 w-full min-w-full overflow-hidden rounded-xl border border-primary/25 bg-[#161616]/95 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:w-[28rem] sm:min-w-[28rem]"
           onMouseEnter={openMenu}
           onMouseLeave={scheduleClose}
         >
@@ -343,10 +345,16 @@ export function Hero() {
             Fintech, Healthcare, and EdTech.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-4">
+          <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:gap-4">
             <ResumeDropdown />
-            <HeroTip label="Let's talk about your next project">
-              <a href="#contact" className="btn-outline">
+            <HeroTip
+              label="Let's talk about your next project"
+              className="w-full sm:w-auto"
+            >
+              <a
+                href="#contact"
+                className="btn-outline w-full justify-center sm:w-auto"
+              >
                 Contact Me
               </a>
             </HeroTip>
