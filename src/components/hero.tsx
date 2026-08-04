@@ -10,6 +10,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, FileText } from "lucide-react";
 import { profile } from "@/data/content";
 import { SocialIcon } from "@/components/social-icon";
@@ -49,13 +50,14 @@ function HeroTip({
 
 function ResumeDropdown() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [placement, setPlacement] = useState<"bottom" | "top" | "right">(
     "bottom",
   );
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({
-    top: "100%",
+    top: 0,
     left: 0,
-    marginTop: 12,
+    width: 0,
   });
   const [ready, setReady] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -63,6 +65,8 @@ function ResumeDropdown() {
   const menuRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuId = useId();
+
+  useEffect(() => setMounted(true), []);
 
   const clearCloseTimer = () => {
     if (closeTimer.current) {
@@ -90,7 +94,8 @@ function ResumeDropdown() {
     if (!button || !menu) return;
 
     const btn = button.getBoundingClientRect();
-    const menuW = menu.offsetWidth || 448;
+    const preferredW = window.innerWidth < 640 ? btn.width : 448;
+    const menuW = Math.max(menu.offsetWidth || 0, preferredW);
     const menuH = menu.offsetHeight || 280;
     const gap = 12;
     const pad = 12;
@@ -99,63 +104,43 @@ function ResumeDropdown() {
     const spaceAbove = btn.top - pad;
     const spaceRight = window.innerWidth - btn.right - pad;
 
-    const fitsBottom = spaceBelow >= menuH + gap;
-    const fitsTop = spaceAbove >= menuH + gap;
-    const fitsRight = spaceRight >= menuW + gap;
-
     let next: "bottom" | "top" | "right" = "bottom";
-    if (fitsBottom) next = "bottom";
-    else if (fitsRight) next = "right";
-    else if (fitsTop) next = "top";
+    if (spaceBelow >= menuH + gap) next = "bottom";
+    else if (spaceAbove >= menuH + gap) next = "top";
+    else if (spaceRight >= menuW + gap) next = "right";
     else {
       const ranked = [
         { key: "bottom" as const, space: spaceBelow },
-        { key: "right" as const, space: spaceRight },
         { key: "top" as const, space: spaceAbove },
+        { key: "right" as const, space: spaceRight },
       ].sort((a, b) => b.space - a.space);
       next = ranked[0].key;
     }
 
     setPlacement(next);
 
-    if (next === "bottom") {
-      const maxLeft = window.innerWidth - menuW - pad;
-      const left = Math.max(pad, Math.min(btn.left, maxLeft)) - btn.left;
-      setMenuStyle({
-        top: "100%",
-        left,
-        marginTop: gap,
-        right: "auto",
-        bottom: "auto",
-        marginBottom: 0,
-        marginLeft: 0,
-      });
-    } else if (next === "top") {
-      const maxLeft = window.innerWidth - menuW - pad;
-      const left = Math.max(pad, Math.min(btn.left, maxLeft)) - btn.left;
-      setMenuStyle({
-        bottom: "100%",
-        left,
-        marginBottom: gap,
-        top: "auto",
-        right: "auto",
-        marginTop: 0,
-        marginLeft: 0,
-      });
-    } else {
-      const maxTop = window.innerHeight - menuH - pad;
-      const top = Math.max(pad, Math.min(btn.top, maxTop)) - btn.top;
-      setMenuStyle({
-        left: "100%",
-        top,
-        marginLeft: gap,
-        right: "auto",
-        bottom: "auto",
-        marginTop: 0,
-        marginBottom: 0,
-      });
+    const width = Math.min(menuW, window.innerWidth - pad * 2);
+    let top = btn.bottom + gap;
+    let left = btn.left;
+
+    if (next === "top") {
+      top = btn.top - menuH - gap;
+      left = btn.left;
+    } else if (next === "right") {
+      top = btn.top;
+      left = btn.right + gap;
     }
 
+    left = Math.max(pad, Math.min(left, window.innerWidth - width - pad));
+    top = Math.max(pad, Math.min(top, window.innerHeight - menuH - pad));
+
+    setMenuStyle({
+      position: "fixed",
+      top,
+      left,
+      width,
+      zIndex: 80,
+    });
     setReady(true);
   };
 
@@ -177,10 +162,15 @@ function ResumeDropdown() {
     if (!open) return;
 
     const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-        setReady(false);
+      const target = event.target as Node;
+      if (
+        rootRef.current?.contains(target) ||
+        menuRef.current?.contains(target)
+      ) {
+        return;
       }
+      setOpen(false);
+      setReady(false);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -200,43 +190,8 @@ function ResumeDropdown() {
 
   useEffect(() => () => clearCloseTimer(), []);
 
-  return (
-    <div
-      ref={rootRef}
-      className="relative flex w-full sm:inline-flex sm:w-auto"
-      onMouseEnter={openMenu}
-      onMouseLeave={scheduleClose}
-    >
-      <button
-        ref={buttonRef}
-        type="button"
-        className="btn-primary w-full justify-center gap-2 sm:w-auto"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={menuId}
-        onClick={() => {
-          if (open) {
-            setOpen(false);
-            setReady(false);
-          } else {
-            openMenu();
-          }
-        }}
-        onFocus={openMenu}
-      >
-        Download Resume
-        <ChevronDown
-          className={`size-4 transition ${
-            open
-              ? placement === "right"
-                ? "-rotate-90"
-                : "rotate-180"
-              : "rotate-0"
-          }`}
-        />
-      </button>
-
-      {open && (
+  const menu = open && mounted
+    ? createPortal(
         <div
           ref={menuRef}
           id={menuId}
@@ -246,7 +201,7 @@ function ResumeDropdown() {
             ...menuStyle,
             visibility: ready ? "visible" : "hidden",
           }}
-          className="absolute z-30 w-full min-w-full overflow-hidden rounded-xl border border-primary/25 bg-[#161616]/95 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:w-[28rem] sm:min-w-[28rem]"
+          className="overflow-hidden rounded-xl border border-primary/25 bg-[#161616]/95 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl"
           onMouseEnter={openMenu}
           onMouseLeave={scheduleClose}
         >
@@ -287,8 +242,47 @@ function ResumeDropdown() {
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        </div>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <div
+      ref={rootRef}
+      className="relative flex w-full sm:inline-flex sm:w-auto"
+      onMouseEnter={openMenu}
+      onMouseLeave={scheduleClose}
+    >
+      <button
+        ref={buttonRef}
+        type="button"
+        className="btn-primary w-full justify-center gap-2 sm:w-auto"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={menuId}
+        onClick={() => {
+          if (open) {
+            setOpen(false);
+            setReady(false);
+          } else {
+            openMenu();
+          }
+        }}
+        onFocus={openMenu}
+      >
+        Download Resume
+        <ChevronDown
+          className={`size-4 transition ${
+            open
+              ? placement === "right"
+                ? "-rotate-90"
+                : "rotate-180"
+              : "rotate-0"
+          }`}
+        />
+      </button>
+      {menu}
     </div>
   );
 }
